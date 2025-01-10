@@ -90,18 +90,7 @@ const Products = () => {
                     <h3 className="text-xl font-semibold text-white mb-2">
                       {product.title}
                     </h3>
-                    <p className="text-gray-400 mb-4">{product.description}</p>
-                    <button className="text-sb-green hover:text-sb-green/90 font-semibold inline-flex items-center space-x-2 group">
-                      <span>Learn More</span>
-                      <svg 
-                        className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                      </svg>
-                    </button>
+                    <p className="text-gray-400">{product.description}</p>
                   </div>
                 </div>
               );

@@ -57,9 +57,9 @@ const Footer = () => {
               <div>
                 <p className="text-gray-400">Address</p>
                 <p className="text-white">
-                  123 Construction Avenue<br />
-                  Building District, BL 12345<br />
-                  United States
+                  Sector 105<br />
+                  Noida<br />
+                  India
                 </p>
               </div>
             </div>
