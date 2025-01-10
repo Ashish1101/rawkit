@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-sb-dark text-white;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-sb-green hover:bg-sb-green/90 text-white font-semibold py-2 px-4 rounded-md transition-colors;
+  }
+  
+  .card {
+    @apply bg-sb-lighter rounded-lg border border-gray-800 hover:border-sb-green/50 transition-colors;
+  }
+}
