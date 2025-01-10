@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
 import Admin from './components/Admin';
 
+
 function App() {
   // Simple check for admin route
   const isAdmin = window.location.pathname === '/admin';
