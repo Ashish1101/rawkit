@@ -43,6 +43,7 @@ export interface Database {
           company: string
           image_url: string
           quote: string
+          rating: number
           created_at: string
         }
         Insert: {
@@ -52,6 +53,7 @@ export interface Database {
           company: string
           image_url: string
           quote: string
+          rating: number
           created_at?: string
         }
         Update: {
@@ -61,6 +63,30 @@ export interface Database {
           company?: string
           image_url?: string
           quote?: string
+          rating?: number
+          created_at?: string
+        }
+      }
+      whatsapp_clicks: {
+        Row: {
+          id: string
+          device_type: string
+          location: { latitude: number; longitude: number } | null
+          user_agent: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          device_type: string
+          location?: { latitude: number; longitude: number } | null
+          user_agent?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          device_type?: string
+          location?: { latitude: number; longitude: number } | null
+          user_agent?: string | null
           created_at?: string
         }
       }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 
@@ -13,7 +13,7 @@ const StarRating = ({ rating }: { rating: number }) => {
           key={star}
           className={`h-5 w-5 ${
             star <= rating
-              ? 'text-yellow-400 fill-yellow-400'
+              ? 'text-green-400 fill-green-400'
               : 'text-gray-600'
           }`}
         />
@@ -70,8 +70,6 @@ const Testimonials = () => {
     return null;
   }
 
-  const currentTestimonial = testimonials[currentIndex];
-
   return (
     <section className="py-20 bg-sb-dark relative overflow-hidden">
       {/* Background elements */}
@@ -93,7 +91,7 @@ const Testimonials = () => {
           </p>
         </div>
 
-        <div className="relative max-w-5xl mx-auto">
+        <div className="relative">
           {/* Navigation buttons */}
           <button
             onClick={prevTestimonial}
@@ -112,65 +110,75 @@ const Testimonials = () => {
           </button>
 
           {/* Testimonial cards */}
-          <div className="relative">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-12">
-              <Quote className="w-20 h-20 text-sb-green/10" />
-            </div>
-
-            {/* Main card */}
-            <div className="relative bg-gradient-to-br from-sb-lighter via-sb-lighter to-sb-darker rounded-2xl border border-gray-800 p-8 md:p-12 backdrop-blur-sm">
-              <div className="flex flex-col items-center text-center">
-                <div className="relative mb-8 group">
-                  <div className="absolute inset-0 bg-sb-green/20 rounded-full blur-2xl transition-all group-hover:blur-3xl" />
-                  <div className="relative w-28 h-28 rounded-full border-4 border-sb-green/20 overflow-hidden transition-transform group-hover:scale-105">
-                    <img
-                      src={currentTestimonial.image_url}
-                      alt={currentTestimonial.name}
-                      className="w-full h-full object-cover"
-                      loading="eager"
-                    />
-                  </div>
-                </div>
-
-                <StarRating rating={currentTestimonial.rating} />
-
-                <blockquote className="text-xl md:text-2xl text-gray-300 my-8 max-w-3xl">
-                  {currentTestimonial.quote}
-                </blockquote>
-
-                <div className="flex flex-col items-center">
-                  <div className="font-semibold text-white text-lg">
-                    {currentTestimonial.name}
-                  </div>
-                  <div className="text-gray-400">
-                    {currentTestimonial.role}
-                  </div>
-                  <div className="text-sb-green mt-1">
-                    {currentTestimonial.company}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Progress indicator */}
-            <div className="flex justify-center mt-8 gap-3">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`group relative h-2 rounded-full transition-all duration-300 ${
-                    index === currentIndex ? 'w-12 bg-sb-green' : 'w-2 bg-gray-600'
-                  }`}
-                  aria-label={`Go to testimonial ${index + 1}`}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[-1, 0, 1].map((offset) => {
+              const index = (currentIndex + offset + testimonials.length) % testimonials.length;
+              const testimonial = testimonials[index];
+              
+              return (
+                <div
+                  key={testimonial.id}
+                  className={`
+                    relative bg-gradient-to-br from-sb-lighter via-sb-lighter to-sb-darker 
+                    rounded-2xl border border-gray-800 p-6 backdrop-blur-sm
+                    transition-all duration-500
+                    ${offset === 0 ? 'opacity-100 scale-105 z-10' : 'opacity-50 scale-95'}
+                  `}
                 >
-                  <div className={`
-                    absolute inset-0 bg-sb-green rounded-full blur-md opacity-50
-                    transition-opacity duration-300
-                    ${index === currentIndex ? 'opacity-50' : 'opacity-0 group-hover:opacity-25'}
-                  `} />
-                </button>
-              ))}
-            </div>
+                  <div className="flex flex-col items-center text-center">
+                    <div className="relative mb-4 group">
+                      <div className="absolute inset-0 bg-sb-green/20 rounded-full blur-xl transition-all group-hover:blur-2xl" />
+                      <div className="relative w-20 h-20 rounded-full border-2 border-sb-green/20 overflow-hidden">
+                        <img
+                          src={testimonial.image_url}
+                          alt={testimonial.name}
+                          className="w-full h-full object-cover"
+                          loading="eager"
+                        />
+                      </div>
+                    </div>
+
+                    <StarRating rating={testimonial.rating} />
+
+                    <blockquote className="text-lg text-gray-300 my-4 line-clamp-4">
+                      "{testimonial.quote}"
+                    </blockquote>
+
+                    <div className="mt-auto">
+                      <div className="font-semibold text-white">
+                        {testimonial.name}
+                      </div>
+                      <div className="text-gray-400 text-sm">
+                        {testimonial.role}
+                      </div>
+                      <div className="text-sb-green text-sm">
+                        {testimonial.company}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Progress indicator */}
+          <div className="flex justify-center mt-8 gap-3">
+            {testimonials.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`group relative h-2 rounded-full transition-all duration-300 ${
+                  index === currentIndex ? 'w-12 bg-sb-green' : 'w-2 bg-gray-600'
+                }`}
+                aria-label={`Go to testimonial ${index + 1}`}
+              >
+                <div className={`
+                  absolute inset-0 bg-sb-green rounded-full blur-md opacity-50
+                  transition-opacity duration-300
+                  ${index === currentIndex ? 'opacity-50' : 'opacity-0 group-hover:opacity-25'}
+                `} />
+              </button>
+            ))}
           </div>
         </div>
       </div>
