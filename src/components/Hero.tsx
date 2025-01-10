@@ -21,11 +21,15 @@ const heroImages = [
 
 const Hero = () => {
   const [currentImage, setCurrentImage] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentImage((prev) => (prev + 1) % heroImages.length);
     }, 5000);
+
+    setIsVisible(true);
+    
     return () => clearInterval(timer);
   }, []);
 
@@ -52,9 +56,9 @@ const Hero = () => {
       ))}
       
       {/* Content */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white px-4">
-        <div className="text-center max-w-4xl mx-auto">
-          <div className="inline-block mb-4 px-3 py-1 rounded-full bg-sb-green/20 text-sb-green text-sm font-medium">
+      <div className={`absolute inset-0 z-20 flex flex-col items-center justify-center text-white px-4 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="text-center max-w-4xl mx-auto stagger-children">
+          <div className="inline-block mb-4 px-3 py-1 rounded-full bg-sb-green/20 text-sb-green text-sm font-medium animate-pulse-glow">
             Building Materials Made Simple
           </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
