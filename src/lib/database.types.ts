@@ -35,6 +35,35 @@ export interface Database {
           created_at?: string
         }
       }
+      sub_products: {
+        Row: {
+          id: string
+          product_id: string
+          name: string
+          brand: string
+          description: string
+          image_url: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          name: string
+          brand: string
+          description: string
+          image_url: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          name?: string
+          brand?: string
+          description?: string
+          image_url?: string
+          created_at?: string
+        }
+      }
       testimonials: {
         Row: {
           id: string
