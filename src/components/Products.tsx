@@ -17,13 +17,14 @@ import {
   Shield,
   Phone
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, checkSupabaseConnection } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 
 type Product = Database['public']['Tables']['products']['Row'];
 type SubProduct = Database['public']['Tables']['sub_products']['Row'];
 type ProductDetails = Database['public']['Tables']['product_details']['Row'];
 type ProductImage = Database['public']['Tables']['product_images']['Row'];
+type WhatsAppClick = Database['public']['Tables']['whatsapp_clicks']['Insert'];
 
 const iconMap: Record<string, LucideIcon> = {
   Construction,
@@ -41,6 +42,8 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const productsRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -48,6 +51,14 @@ const Products = () => {
   useEffect(() => {
     async function fetchProducts() {
       try {
+        // First check the connection
+        const isConnected = await checkSupabaseConnection();
+        if (!isConnected) {
+          console.error('Unable to connect to Supabase. Please check your connection.');
+          setLoading(false);
+          return;
+        }
+
         const { data, error } = await supabase
           .from('products')
           .select('*')
@@ -57,6 +68,12 @@ const Products = () => {
         setProducts(data || []);
       } catch (error) {
         console.error('Error fetching products:', error);
+        // Show a more user-friendly error message
+        if (error instanceof Error) {
+          if (error.message.includes('Failed to fetch')) {
+            console.error('Network error: Unable to connect to the database. Please check your internet connection.');
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -151,15 +168,77 @@ const Products = () => {
     }
   };
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => 
-      (prev + 1) % (productImages.length || 1)
+  const getDeviceType = () => {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+      return 'tablet';
+    }
+    if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+      return 'mobile';
+    }
+    return 'desktop';
+  };
+
+  const redirectToWhatsApp = () => {
+    const productName = selectedProduct?.title || '';
+    const message = `Hi Rawkit, I want to inquire about ${productName}!`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(
+      `https://wa.me/919220436229?text=${encodedMessage}`,
+      '_blank'
     );
+  };
+
+  const handleLocationAndRedirect = async () => {
+    setIsLoading(true);
+    const clickData: WhatsAppClick = {
+      device_type: getDeviceType(),
+      user_agent: navigator.userAgent
+    };
+
+    try {
+      if (navigator.geolocation) {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 5000,
+            enableHighAccuracy: true
+          });
+        });
+
+        clickData.location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+      }
+    } catch (error) {
+      console.log('Location access denied or error occurred');
+    }
+
+    try {
+      await supabase.from('whatsapp_clicks').insert(clickData);
+    } catch (error) {
+      console.error('Error recording WhatsApp click:', error);
+    }
+
+    setIsLoading(false);
+    setShowLocationModal(false);
+    redirectToWhatsApp();
+  };
+
+  const handleContactClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowLocationModal(true);
   };
 
   const prevImage = () => {
     setCurrentImageIndex((prev) => 
-      prev === 0 ? (productImages.length - 1 || 0) : prev - 1
+      prev === 0 ? productImages.length - 1 : prev - 1
+    );
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => 
+      prev === productImages.length - 1 ? 0 : prev + 1
     );
   };
 
@@ -392,11 +471,63 @@ const Products = () => {
                 )}
 
                 {/* Contact Button */}
-                <button className="w-full bg-sb-green hover:bg-sb-green/90 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
-                  <Phone className="h-5 w-5 mr-2" />
-                  Contact for Pricing
-                </button>
+                <div className="mt-6">
+                  <button 
+                    onClick={handleContactClick}
+                    className="w-full bg-sb-green hover:bg-sb-green/90 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                  >
+                    <Phone className="h-5 w-5 mr-2" />
+                    Contact for Pricing
+                  </button>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Location Permission Modal */}
+      {showLocationModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-sb-lighter rounded-lg border border-gray-800 p-6 max-w-md w-full relative animate-slide-up">
+            <button 
+              onClick={() => setShowLocationModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-xl font-semibold text-white mb-4">
+              Location Access
+            </h3>
+            
+            <p className="text-gray-300 mb-6">
+              To serve you better, we'd like to know your location. This helps us provide more accurate delivery estimates and service options.
+            </p>
+
+            <div className="flex gap-4">
+              <button
+                onClick={handleLocationAndRedirect}
+                disabled={isLoading}
+                className={`
+                  flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold 
+                  py-2 px-4 rounded-md transition-colors relative
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+              >
+                {isLoading ? 'Processing...' : 'Allow & Continue'}
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowLocationModal(false);
+                  redirectToWhatsApp();
+                }}
+                disabled={isLoading}
+                className="flex-1 border border-gray-700 hover:border-gray-600 text-gray-300 font-semibold py-2 px-4 rounded-md transition-colors"
+              >
+                Skip
+              </button>
             </div>
           </div>
         </div>
