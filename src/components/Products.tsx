@@ -7,13 +7,23 @@ import {
   Building,
   X,
   ExternalLink,
-  LucideIcon
+  ChevronLeft,
+  ChevronRight,
+  LucideIcon,
+  Check,
+  Package,
+  Truck,
+  Clock,
+  Shield,
+  Phone
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 
 type Product = Database['public']['Tables']['products']['Row'];
 type SubProduct = Database['public']['Tables']['sub_products']['Row'];
+type ProductDetails = Database['public']['Tables']['product_details']['Row'];
+type ProductImage = Database['public']['Tables']['product_images']['Row'];
 
 const iconMap: Record<string, LucideIcon> = {
   Construction,
@@ -26,9 +36,12 @@ const iconMap: Record<string, LucideIcon> = {
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [subProducts, setSubProducts] = useState<SubProduct[]>([]);
+  const [productDetails, setProductDetails] = useState<ProductDetails | null>(null);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const productsRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -40,10 +53,7 @@ const Products = () => {
           .select('*')
           .order('created_at', { ascending: true });
 
-        if (error) {
-          throw error;
-        }
-
+        if (error) throw error;
         setProducts(data || []);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -80,45 +90,77 @@ const Products = () => {
 
   useEffect(() => {
     if (selectedProduct) {
-      fetchSubProducts(selectedProduct.id);
+      fetchProductData(selectedProduct.id);
     }
   }, [selectedProduct]);
 
-  const fetchSubProducts = async (productId: string) => {
+  const fetchProductData = async (productId: string) => {
     try {
-      const { data, error } = await supabase
+      // Fetch sub-products
+      const { data: subProductsData, error: subProductsError } = await supabase
         .from('sub_products')
         .select('*')
         .eq('product_id', productId)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        throw error;
-      }
+      if (subProductsError) throw subProductsError;
+      setSubProducts(subProductsData || []);
 
-      setSubProducts(data || []);
+      // Fetch product details
+      const { data: detailsData, error: detailsError } = await supabase
+        .from('product_details')
+        .select('*')
+        .eq('product_id', productId)
+        .single();
+
+      if (detailsError && detailsError.code !== 'PGRST116') throw detailsError;
+      setProductDetails(detailsData);
+
+      // Fetch product images
+      const { data: imagesData, error: imagesError } = await supabase
+        .from('product_images')
+        .select('*')
+        .eq('product_id', productId)
+        .order('display_order', { ascending: true });
+
+      if (imagesError) throw imagesError;
+      setProductImages(imagesData || []);
     } catch (error) {
-      console.error('Error fetching sub-products:', error);
+      console.error('Error fetching product data:', error);
     }
   };
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
     setShowModal(true);
+    setCurrentImageIndex(0);
     document.body.style.overflow = 'hidden';
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedProduct(null);
+    setProductDetails(null);
+    setProductImages([]);
     document.body.style.overflow = 'unset';
   };
 
-  // Close modal when clicking outside
   const handleModalClick = (e: React.MouseEvent) => {
     if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
       closeModal();
     }
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => 
+      (prev + 1) % (productImages.length || 1)
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => 
+      prev === 0 ? (productImages.length - 1 || 0) : prev - 1
+    );
   };
 
   return (
@@ -174,7 +216,7 @@ const Products = () => {
         )}
       </div>
 
-      {/* Sub-products Modal */}
+      {/* Enhanced Product Details Modal */}
       {showModal && selectedProduct && (
         <div 
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300"
@@ -182,65 +224,178 @@ const Products = () => {
         >
           <div 
             ref={modalRef}
-            className="bg-sb-lighter rounded-lg border border-gray-800 max-w-4xl w-full max-h-[90vh] overflow-hidden relative animate-modal-slide-up"
+            className="bg-sb-lighter rounded-lg border border-gray-800 w-full max-h-[90vh] overflow-y-auto relative animate-modal-slide-up max-w-6xl"
           >
-            {/* Modal Header */}
-            <div className="p-6 border-b border-gray-800">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-2">
-                    {selectedProduct.title} Products
-                  </h3>
-                  <p className="text-gray-400">{selectedProduct.description}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Images and Basic Info */}
+              <div className="relative">
+                {/* Carousel Section */}
+                <div className="relative h-64 md:h-96">
+                  <img
+                    src={productImages[currentImageIndex]?.image_url || selectedProduct.image_url}
+                    alt={productImages[currentImageIndex]?.alt_text || selectedProduct.title}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {productImages.length > 1 && (
+                    <>
+                      {/* Carousel Navigation */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      
+                      <button
+                        onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </button>
+
+                      {/* Carousel Indicators */}
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                        {productImages.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(index); }}
+                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                              index === currentImageIndex 
+                                ? 'bg-sb-green w-8' 
+                                : 'bg-white/50 hover:bg-white/75'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
+
+                {/* Quick Info Cards */}
+                <div className="grid grid-cols-2 gap-4 p-6">
+                  <div className="bg-sb-darker p-4 rounded-lg border border-gray-800">
+                    <Clock className="h-5 w-5 text-sb-green mb-2" />
+                    <h5 className="text-white font-medium">Delivery Time</h5>
+                    <p className="text-gray-400 text-sm">
+                      {productDetails?.delivery_info.delivery_time || '24-48 hours'}
+                    </p>
+                  </div>
+                  <div className="bg-sb-darker p-4 rounded-lg border border-gray-800">
+                    <Package className="h-5 w-5 text-sb-green mb-2" />
+                    <h5 className="text-white font-medium">Min. Order</h5>
+                    <p className="text-gray-400 text-sm">
+                      {productDetails?.delivery_info.minimum_order || '10 tons'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Details */}
+              <div className="p-6 border-l border-gray-800">
+                {/* Close Button */}
                 <button 
                   onClick={closeModal}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="absolute top-4 right-4 p-2 rounded-full bg-sb-darker text-gray-400 hover:text-white transition-colors"
                 >
                   <X className="h-6 w-6" />
                 </button>
-              </div>
-            </div>
 
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {subProducts.map((subProduct, index) => (
-                  <div 
-                    key={subProduct.id}
-                    className="bg-sb-darker rounded-lg border border-gray-800 overflow-hidden hover:border-sb-green/50 transition-all duration-300 hover:scale-[1.02] group animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="aspect-square relative overflow-hidden">
-                      <img
-                        src={subProduct.image_url}
-                        alt={subProduct.name}
-                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-sb-darker to-transparent opacity-60" />
-                      <div className="absolute bottom-2 left-2">
-                        <div className="text-xs font-medium text-sb-green bg-sb-darker/80 px-2 py-1 rounded-full">
-                          {subProduct.brand}
+                {/* Product Title and Description */}
+                <div className="mb-8">
+                  <h3 className="text-3xl font-bold text-white mb-4">
+                    {selectedProduct.title}
+                  </h3>
+                  <p className="text-gray-300">
+                    {selectedProduct.description}
+                  </p>
+                </div>
+
+                {/* Technical Specifications */}
+                {productDetails?.technical_specs && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-semibold text-sb-green mb-4 flex items-center">
+                      <Shield className="h-5 w-5 mr-2" />
+                      Technical Specifications
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {Object.entries(productDetails.technical_specs)
+                        .filter(([key]) => key !== 'features')
+                        .map(([key, value]) => (
+                          <div key={key} className="bg-sb-darker p-3 rounded-lg">
+                            <div className="text-sm text-gray-400">
+                              {key.split('_').map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                              ).join(' ')}
+                            </div>
+                            <div className="text-white font-medium">{value as string}</div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Available Sizes */}
+                {productDetails?.available_sizes && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-semibold text-sb-green mb-4">Available Sizes</h4>
+                    <div className="flex flex-wrap gap-3">
+                      {productDetails.available_sizes.map((size) => (
+                        <div key={size} className="px-4 py-2 rounded-lg bg-sb-darker border border-gray-800 text-white">
+                          {size}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Certifications */}
+                {productDetails?.certifications && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-semibold text-sb-green mb-4 flex items-center">
+                      <Check className="h-5 w-5 mr-2" />
+                      Certifications
+                    </h4>
+                    <div className="flex flex-wrap gap-3">
+                      {productDetails.certifications.map((cert) => (
+                        <div key={cert} className="flex items-center px-3 py-1 rounded-full bg-green-900/20 text-green-400 text-sm">
+                          <Check className="h-4 w-4 mr-1" />
+                          {cert}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Delivery Information */}
+                {productDetails?.delivery_info && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-semibold text-sb-green mb-4 flex items-center">
+                      <Truck className="h-5 w-5 mr-2" />
+                      Delivery Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-sb-darker p-3 rounded-lg">
+                        <div className="text-sm text-gray-400">Coverage</div>
+                        <div className="text-white font-medium">
+                          {productDetails.delivery_info.coverage}
+                        </div>
+                      </div>
+                      <div className="bg-sb-darker p-3 rounded-lg">
+                        <div className="text-sm text-gray-400">Transport Modes</div>
+                        <div className="text-white font-medium">
+                          {(productDetails.delivery_info.transport_modes as string[]).join(', ')}
                         </div>
                       </div>
                     </div>
-                    <div className="p-3">
-                      <h4 className="text-sm font-semibold text-white group-hover:text-sb-green transition-colors line-clamp-1">
-                        {subProduct.name}
-                      </h4>
-                      <p className="text-gray-400 text-xs mt-1 line-clamp-2">
-                        {subProduct.description}
-                      </p>
-                      <a
-                        href="#"
-                        className="inline-flex items-center text-sb-green hover:text-sb-green/80 transition-colors text-xs font-medium mt-2"
-                      >
-                        Learn more
-                        <ExternalLink className="h-3 w-3 ml-1" />
-                      </a>
-                    </div>
                   </div>
-                ))}
+                )}
+
+                {/* Contact Button */}
+                <button className="w-full bg-sb-green hover:bg-sb-green/90 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                  <Phone className="h-5 w-5 mr-2" />
+                  Contact for Pricing
+                </button>
               </div>
             </div>
           </div>

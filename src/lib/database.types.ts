@@ -35,6 +35,61 @@ export interface Database {
           created_at?: string
         }
       }
+      product_details: {
+        Row: {
+          id: string
+          product_id: string
+          technical_specs: Json
+          available_sizes: string[]
+          certifications: string[]
+          delivery_info: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          technical_specs?: Json
+          available_sizes?: string[]
+          certifications?: string[]
+          delivery_info?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          technical_specs?: Json
+          available_sizes?: string[]
+          certifications?: string[]
+          delivery_info?: Json
+          created_at?: string
+        }
+      }
+      product_images: {
+        Row: {
+          id: string
+          product_id: string
+          image_url: string
+          alt_text: string
+          display_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          image_url: string
+          alt_text: string
+          display_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          image_url?: string
+          alt_text?: string
+          display_order?: number
+          created_at?: string
+        }
+      }
       sub_products: {
         Row: {
           id: string
