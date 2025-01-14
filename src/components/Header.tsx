@@ -37,14 +37,14 @@ const Header = () => {
               Home
             </button>
             <button 
-              onClick={() => scrollToSection('footer')} 
+              onClick={() => scrollToSection('products')} 
               className={`transition-colors ${
-                activeButton === 'footer' 
+                activeButton === 'products' 
                   ? 'text-sb-green' 
                   : 'text-gray-300 hover:text-sb-green'
               }`}
             >
-              About Us
+              Products
             </button>
             <button 
               onClick={() => scrollToSection('footer')} 
@@ -57,14 +57,14 @@ const Header = () => {
               Contact Us
             </button>
             <button 
-              onClick={() => scrollToSection('products')} 
-              className={`${
-                activeButton === 'products' 
-                  ? 'bg-sb-green text-white' 
-                  : 'bg-sb-purple hover:bg-sb-green text-white'
-              } px-4 py-2 rounded-md transition-colors`}
+              onClick={() => scrollToSection('footer')} 
+              className={`transition-colors ${
+                activeButton === 'footer' 
+                  ? 'text-sb-green' 
+                  : 'text-gray-300 hover:text-sb-green'
+              }`}
             >
-              Products
+              About Us
             </button>
           </div>
 
@@ -113,14 +113,14 @@ const Header = () => {
                 Home
               </button>
               <button 
-                onClick={() => scrollToSection('footer')} 
+                onClick={() => scrollToSection('products')} 
                 className={`w-full text-left transition-colors py-2 ${
-                  activeButton === 'footer' 
+                  activeButton === 'products' 
                     ? 'text-sb-green' 
                     : 'text-gray-300 hover:text-sb-green'
                 }`}
               >
-                About Us
+                Products
               </button>
               <button 
                 onClick={() => scrollToSection('footer')} 
@@ -133,14 +133,14 @@ const Header = () => {
                 Contact Us
               </button>
               <button 
-                onClick={() => scrollToSection('products')} 
-                className={`w-full transition-colors px-4 py-2 rounded-md ${
-                  activeButton === 'products' 
-                    ? 'bg-sb-green text-white' 
-                    : 'bg-sb-purple hover:bg-sb-green text-white'
+                onClick={() => scrollToSection('footer')} 
+                className={`w-full text-left transition-colors py-2 ${
+                  activeButton === 'footer' 
+                    ? 'text-sb-green' 
+                    : 'text-gray-300 hover:text-sb-green'
                 }`}
               >
-                Products
+                About Us
               </button>
             </div>
           </div>
