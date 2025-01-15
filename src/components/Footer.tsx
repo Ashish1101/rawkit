@@ -44,21 +44,21 @@ const Footer = () => {
                 <p className="text-gray-400">Email</p>
                 <a href="mailto:contact@rawkit.com" 
                   className="text-white hover:text-sb-purple transition-colors">
-                  contact@rawkit.com
+                  info@rawkit.in
                 </a>
               </div>
               <div>
                 <p className="text-gray-400">Phone</p>
                 <a href="tel:+1234567890" 
                   className="text-white hover:text-sb-purple transition-colors">
-                  +1 (234) 567-890
+                  +919220436229
                 </a>
               </div>
               <div>
                 <p className="text-gray-400">Address</p>
                 <p className="text-white">
-                  Sector 105<br />
-                  Noida<br />
+                  Sector 105,<br />
+                  Noida,<br />
                   India
                 </p>
               </div>
